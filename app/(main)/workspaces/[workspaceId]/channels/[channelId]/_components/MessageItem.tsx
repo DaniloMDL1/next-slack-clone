@@ -2,7 +2,7 @@
 
 import UserAvatar from "@/components/avatars/UserAvatar"
 import ReadOnlyEditor from "@/components/ReadOnlyEditor"
-import { MessageWithUserType } from "@/types/types"
+import { MessageWithUserAndReactionsType } from "@/types/types"
 import { format } from "date-fns"
 import MessageInteractions from "./MessageInteractions"
 import { useEffect, useState, useTransition } from "react"
@@ -10,16 +10,21 @@ import Editor from "@/components/Editor"
 import { updateMessage } from "@/actions/messageActions"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { toggleReaction } from "@/actions/reactionActions"
+import { useWorkspaceId } from "@/hooks/useWorkspaceId"
 
 type Props = {
-    message: MessageWithUserType,
-    isOwn: boolean
+    message: MessageWithUserAndReactionsType,
+    isOwn: boolean,
+    currentUserId: string
 }
 
-const MessageItem = ({ message, isOwn }: Props) => {
+const MessageItem = ({ message, isOwn, currentUserId }: Props) => {
     const [isEditing, setIsEditing] = useState(false)
     const [editedContent, setEditedContent] = useState(message.content)
     const [isPending, startTransition] = useTransition()
+
+    const workspaceId = useWorkspaceId()
 
     useEffect(() => {
         setEditedContent(message.content)
@@ -40,8 +45,18 @@ const MessageItem = ({ message, isOwn }: Props) => {
         })
     }
 
+    const handleToggleReaction = async (emoji: string) => {
+        const response = await toggleReaction({ messageId: message.id, channelId: message.channel_id, workspaceId, emoji })
+
+        if(response.success) {
+
+        } else {
+            toast.error(response.error)
+        }
+    }
+
     return (
-        <div className={cn("flex gap-2 p-2 transition-all rounded-md group relative", !isEditing && "hover:bg-muted")}>
+        <div className={cn("flex gap-2 p-2 transition-all rounded-md group relative", !isEditing && "hover:bg-muted/40")}>
             {!isEditing && (
                 <MessageInteractions 
                     isOwn={isOwn} 
@@ -75,8 +90,44 @@ const MessageItem = ({ message, isOwn }: Props) => {
                     <ReadOnlyEditor content={message.content}/>
                 )}
 
-                {message.is_edited && (
-                    <p className="text-muted-foreground">(edited)</p>
+                {!isEditing && (
+                    <>
+                        {message.is_edited && (
+                            <p className="text-muted-foreground">(edited)</p>
+                        )}
+                    </>
+                )}
+
+                {!isEditing && message.reactions.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                        {Object.entries(
+                            message.reactions.reduce((acc, reaction) => {
+                                const emoji = reaction.emoji
+
+                                if(!acc[emoji]) {
+                                    acc[emoji] = { count: 0, hasMe: false }
+                                }
+
+                                acc[emoji].count += 1
+
+                                if(reaction.user_id === currentUserId) {
+                                    acc[emoji].hasMe = true
+                                }
+
+                                return acc
+
+                            }, {} as Record<string, { count: number, hasMe: boolean }>)
+                        ).map(([emoji, { count, hasMe }]) => (
+                            <div 
+                                key={emoji}
+                                onClick={() => handleToggleReaction(emoji)}
+                                className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded-full hover:scale-105 transition-all cursor-pointer", hasMe ? "bg-accent text-primary" : "bg-muted")}
+                            >
+                                <span className="">{emoji}</span>
+                                <span className="font-semibold">{count}</span>
+                            </div>
+                        ))}
+                    </div>
                 )}
 
             </div>

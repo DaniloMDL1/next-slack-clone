@@ -1,12 +1,12 @@
 "use client"
 
-import { MessageWithUserType } from "@/types/types"
+import { MessageWithUserAndReactionsType, ReactionType } from "@/types/types"
 import { useEffect, useRef, useState } from "react"
 import MessageItem from "./MessageItem"
 import { createClient } from "@/lib/supabase/client"
 
 type Props = {
-    initialMessages: MessageWithUserType[],
+    initialMessages: MessageWithUserAndReactionsType[],
     channelId: string,
     currentUserId: string
 }
@@ -17,6 +17,10 @@ const MessagesContainer = ({ initialMessages, channelId, currentUserId }: Props)
     const bottomRef = useRef<HTMLDivElement>(null)
 
     const supabase = createClient()
+
+    useEffect(() => {
+        setMessages(initialMessages)
+    }, [initialMessages])
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -52,14 +56,14 @@ const MessagesContainer = ({ initialMessages, channelId, currentUserId }: Props)
                 const newMessage = {
                     ...payload.new,
                     user: profile
-                } as MessageWithUserType
+                } as MessageWithUserAndReactionsType
 
                 setMessages((prev) => {
                     if(prev.some((msg) => msg.id === newMessage.id)) {
                         return prev
                     }
 
-                    return [...prev, newMessage]
+                    return [...prev, { ...newMessage, reactions: [] }]
                 })
             }
         )
@@ -111,6 +115,7 @@ const MessagesContainer = ({ initialMessages, channelId, currentUserId }: Props)
                     key={message.id} 
                     message={message}
                     isOwn={message.user_id === currentUserId}
+                    currentUserId={currentUserId}
                 />
             ))}
 

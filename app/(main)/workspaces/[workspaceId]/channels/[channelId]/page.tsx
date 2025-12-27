@@ -33,7 +33,8 @@ const ChannelPage = async ({ params }: Props) => {
     .from("messages")
     .select(`
         *,
-        user:user_id (*)    
+        user:user_id (*),
+        reactions:message_reactions (*)
     `)
     .eq("channel_id", channelId)
 
