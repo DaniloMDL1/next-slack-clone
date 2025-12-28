@@ -11,20 +11,23 @@ import { updateMessage } from "@/actions/messageActions"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { toggleReaction } from "@/actions/reactionActions"
-import { useWorkspaceId } from "@/hooks/useWorkspaceId"
+import { useThreadStore } from "@/hooks/useThreadStore"
+import { Separator } from "@/components/ui/separator"
 
 type Props = {
     message: MessageWithUserAndReactionsType,
     isOwn: boolean,
-    currentUserId: string
+    currentUserId: string,
+    isMainMessage?: boolean,
+    isSheet?: boolean
 }
 
-const MessageItem = ({ message, isOwn, currentUserId }: Props) => {
+const MessageItem = ({ message, isOwn, currentUserId, isMainMessage, isSheet }: Props) => {
     const [isEditing, setIsEditing] = useState(false)
     const [editedContent, setEditedContent] = useState(message.content)
     const [isPending, startTransition] = useTransition()
 
-    const workspaceId = useWorkspaceId()
+    const { onOpenThread } = useThreadStore()
 
     useEffect(() => {
         setEditedContent(message.content)
@@ -46,7 +49,7 @@ const MessageItem = ({ message, isOwn, currentUserId }: Props) => {
     }
 
     const handleToggleReaction = async (emoji: string) => {
-        const response = await toggleReaction({ messageId: message.id, channelId: message.channel_id, workspaceId, emoji })
+        const response = await toggleReaction({ messageId: message.id, channelId: message.channel_id, emoji })
 
         if(response.success) {
 
@@ -55,6 +58,8 @@ const MessageItem = ({ message, isOwn, currentUserId }: Props) => {
         }
     }
 
+    const replyCount = "replies" in message ? message.replies?.[0]?.count : 0
+
     return (
         <div className={cn("flex gap-2 p-2 transition-all rounded-md group relative", !isEditing && "hover:bg-muted/40")}>
             {!isEditing && (
@@ -62,6 +67,7 @@ const MessageItem = ({ message, isOwn, currentUserId }: Props) => {
                     isOwn={isOwn} 
                     message={message} 
                     handleEdit={() => setIsEditing(true)}
+                    isSheet={isSheet}
                 />
             )}
 
@@ -84,7 +90,7 @@ const MessageItem = ({ message, isOwn, currentUserId }: Props) => {
                         onSubmit={handleUpdateMessage}
                         isSubmitting={isPending}
                         isEditing={isEditing}
-                        handleEdit={() => setIsEditing(false)}
+                        onEditClose={() => setIsEditing(false)}
                     />
                 ) : (
                     <ReadOnlyEditor content={message.content}/>
@@ -129,6 +135,14 @@ const MessageItem = ({ message, isOwn, currentUserId }: Props) => {
                         ))}
                     </div>
                 )}
+
+                {replyCount > 0 && !message.parent_id && (
+                    <div onClick={() => onOpenThread(message.id)} role="button" className={cn("flex items-center group cursor-pointer w-full mt-1", isSheet ? "gap-2" : "gap-1")}>
+                        <span className={cn("font-semibold", isSheet ? "text-muted-foreground/70 text-sm" : "text-sky-700 group-hover:text-sky-700/90")}>{replyCount} {replyCount === 1 ? "reply" : "replies"}</span>
+                        {isSheet && isMainMessage && <Separator className="flex-1"/>}
+                    </div>
+                )}
+
 
             </div>
         </div>

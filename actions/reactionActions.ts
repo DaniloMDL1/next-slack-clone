@@ -1,16 +1,14 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { revalidatePath } from "next/cache"
 
 type CreateReactionProps = {
     messageId: string,
     channelId: string,
-    workspaceId: string,
     emoji: string
 }
 
-const createReaction = async ({ messageId, channelId, workspaceId, emoji }: CreateReactionProps) => {
+const createReaction = async ({ messageId, channelId, emoji }: CreateReactionProps) => {
 
     const supabase = await createClient()
 
@@ -26,8 +24,6 @@ const createReaction = async ({ messageId, channelId, workspaceId, emoji }: Crea
 
         if(supabaseError) return { success: false, error: supabaseError.message }
 
-        revalidatePath(`/workspaces/${workspaceId}/channels/${channelId}`)
-
         return { success: true, error: null }
 
     } catch(error) {
@@ -39,11 +35,10 @@ const createReaction = async ({ messageId, channelId, workspaceId, emoji }: Crea
 type ToggleReactionProps = {
     messageId: string,
     channelId: string,
-    workspaceId: string,
     emoji: string
 }
 
-const toggleReaction = async ({ messageId, channelId, workspaceId, emoji }: ToggleReactionProps) => {
+const toggleReaction = async ({ messageId, channelId, emoji }: ToggleReactionProps) => {
 
     const supabase = await createClient()
 
@@ -72,8 +67,6 @@ const toggleReaction = async ({ messageId, channelId, workspaceId, emoji }: Togg
 
         if(insertError) return { success: false, error: insertError.message }
     }
-
-    revalidatePath(`/workspaces/${workspaceId}/channels/${channelId}`)
 
     return { success: true, error: null }
 }

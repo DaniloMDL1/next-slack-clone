@@ -7,31 +7,32 @@ import Hint from "@/components/Hint"
 import { Button } from "@/components/ui/button"
 import { EmojiPicker, EmojiPickerContent, EmojiPickerFooter, EmojiPickerSearch } from "@/components/ui/emoji-picker"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { useWorkspaceId } from "@/hooks/useWorkspaceId"
+import { useThreadStore } from "@/hooks/useThreadStore"
 import { MessageWithUserAndReactionsType } from "@/types/types"
-import { Edit, Smile, Trash } from "lucide-react"
+import { Edit, MessageSquareText, Smile, Trash } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
 type Props = {
     isOwn: boolean,
     message: MessageWithUserAndReactionsType,
-    handleEdit: () => void
+    handleEdit: () => void,
+    isSheet?: boolean
 }
 
-const MessageInteractions = ({ isOwn, message, handleEdit }: Props) => {
+const MessageInteractions = ({ isOwn, message, handleEdit, isSheet }: Props) => {
     const [isDeleteOpen, setIsDeleteOpen] = useState(false)
 
     const [isEmojiOpen, setIsEmojiOpen] = useState(false)
 
-    const workspaceId = useWorkspaceId()
+    const { onOpenThread } = useThreadStore()
 
     const deleteAction = async () => {
         await deleteMessage({ messageId: message.id })
     }
 
     const handleReaction = async (emoji: string) => {
-        const response = await createReaction({ messageId: message.id, channelId: message.channel_id, workspaceId, emoji })
+        const response = await createReaction({ messageId: message.id, channelId: message.channel_id, emoji })
 
         if(response.success) {
             setIsEmojiOpen(false)
@@ -59,6 +60,14 @@ const MessageInteractions = ({ isOwn, message, handleEdit }: Props) => {
                     </EmojiPicker>
                 </PopoverContent>
             </Popover>
+
+            {!isSheet && (
+                <Hint title="Thread">
+                    <Button onClick={() => onOpenThread(message.id)} variant={"ghost"} size={"sm"}>
+                        <MessageSquareText className="size-4"/>
+                    </Button>
+                </Hint>
+            )}
 
             {isOwn && (
                 <>

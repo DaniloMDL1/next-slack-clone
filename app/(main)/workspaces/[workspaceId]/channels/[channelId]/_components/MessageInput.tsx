@@ -24,7 +24,6 @@ const MessageInput = () => {
             }
 
         })
-
     }
 
     return (

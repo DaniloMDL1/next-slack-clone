@@ -7,13 +7,17 @@ import { Placeholder } from "@tiptap/extensions"
 import Emoji from "@tiptap/extension-emoji"
 import CodeBlock from "@tiptap/extension-code-block"
 import { Toggle } from "./ui/toggle"
-import { Bold, Code2, Italic, List, ListOrdered, Redo, Smile, Strikethrough, Undo } from "lucide-react"
+import { Bold, Code2, ImageIcon, Italic, List, ListOrdered, Redo, Smile, Strikethrough, Undo } from "lucide-react"
 import { Button } from "./ui/button"
 import { Separator } from "./ui/separator"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { EmojiPicker, EmojiPickerContent, EmojiPickerFooter, EmojiPickerSearch } from "@/components/ui/emoji-picker"
 import { IoMdSend } from "react-icons/io";
 import { Spinner } from "./ui/spinner"
+import { ChangeEvent, useRef, useState } from "react"
+import { toast } from "sonner"
+import { useChannelId } from "@/hooks/useChannelId"
+import { createClient } from "@/lib/supabase/client"
 
 type Props = {
     content: string,
@@ -21,11 +25,18 @@ type Props = {
     placeholder?: string,
     onSubmit: (content: string) => Promise<void>,
     isSubmitting: boolean,
-    isEditing: boolean,
-    handleEdit: () => void
+    isEditing?: boolean,
+    onEditClose?: () => void
 }
 
-const Editor = ({ content, onChange, placeholder, onSubmit, isSubmitting, isEditing, handleEdit }: Props) => {
+const Editor = ({ content, onChange, placeholder, onSubmit, isSubmitting, isEditing, onEditClose }: Props) => {
+    const [isUploading, setIsUploading] = useState(false)
+
+    const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+    const channelId = useChannelId()
+
+    const supabase = createClient()
 
     const editor = useEditor({
         extensions: [
@@ -39,7 +50,7 @@ const Editor = ({ content, onChange, placeholder, onSubmit, isSubmitting, isEdit
             CodeBlock.configure({
                 tabSize: 4,
                 enableTabIndentation: true
-            })
+            }),
         ],
         editable: true,
         immediatelyRender: false,
@@ -56,6 +67,42 @@ const Editor = ({ content, onChange, placeholder, onSubmit, isSubmitting, isEdit
             }
         }
     })
+
+    const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+
+        if(!file || !editor) return
+
+        try {
+            setIsUploading(true)
+
+            const filePath = `${channelId}/${file.name}`
+
+            const { error: uploadError } = await supabase.storage
+            .from("message-attachments")
+            .upload(filePath, file, { contentType: file.type, upsert: false })
+
+            if(uploadError) {
+                console.log(uploadError)
+                toast.error(uploadError.message)
+                return
+            }
+
+            const { data } = supabase.storage
+            .from("message-attachments")
+            .getPublicUrl(filePath)
+
+        } catch(error) {
+            console.log(error)
+            toast.error("Error uploading image")
+        } finally {
+            setIsUploading(false)
+
+            if(fileInputRef.current) {
+                fileInputRef.current.value = ""
+            }
+        }
+    }
 
     if(!editor) return null
 
@@ -146,27 +193,46 @@ const Editor = ({ content, onChange, placeholder, onSubmit, isSubmitting, isEdit
             </div>
             <EditorContent editor={editor}/>
             <div className="py-2 px-3 flex justify-between items-center gap-4">
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant={"ghost"} size={"sm"}>
-                            <Smile className="size-4"/>
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-fit p-0">
-                        <EmojiPicker 
-                            onEmojiSelect={({ emoji }) => editor.chain().focus().insertContent(emoji + " ").run()}
-                            className="w-full h-87"
-                        >
-                            <EmojiPickerSearch />
-                            <EmojiPickerContent />
-                            <EmojiPickerFooter />
-                        </EmojiPicker>
-                    </PopoverContent>
-                </Popover>
+                <div className="flex items-center gap-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant={"ghost"} size={"sm"}>
+                                <Smile className="size-4"/>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-fit p-0">
+                            <EmojiPicker 
+                                onEmojiSelect={({ emoji }) => editor.chain().focus().insertContent(emoji + " ").run()}
+                                className="w-full h-87"
+                            >
+                                <EmojiPickerSearch />
+                                <EmojiPickerContent />
+                                <EmojiPickerFooter />
+                            </EmojiPicker>
+                        </PopoverContent>
+                    </Popover>
+
+                    <Button 
+                        variant={"ghost"} 
+                        size={"sm"}
+                        disabled={isUploading}
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        {isUploading ? <Spinner className="size-4"/> : <ImageIcon className="size-4"/>}
+                    </Button>
+
+                    <input 
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                    />
+                </div>
 
                 {isEditing ? (
                     <div className="flex items-center gap-2">
-                        <Button onClick={handleEdit} variant={"outline"}>
+                        <Button onClick={onEditClose} variant={"outline"}>
                             Cancel
                         </Button>
 

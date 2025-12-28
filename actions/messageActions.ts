@@ -90,4 +90,36 @@ const updateMessage = async ({ messageId, content }: UpdateMessageProps) => {
     }
 }
 
-export { createMessage, deleteMessage, updateMessage }
+type CreateReplyProps = {
+    content: string,
+    channelId: string,
+    parentId: string
+}
+
+const createReply = async ({ content, channelId, parentId }: CreateReplyProps) => {
+
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if(!user) return { success: false, error: "Not authorized" }
+
+    if(!content || !channelId || !parentId) return { success: false, error: "All fields are required" }
+
+    try {
+
+        const { error: supabaseError } = await supabase
+        .from("messages")
+        .insert({ user_id: user.id, content, channel_id: channelId, parent_id: parentId })
+
+        if(supabaseError) return { success: false, error: supabaseError.message }
+
+        return { success: true, error: null }
+
+    } catch(error) {
+        console.log(error)
+        return { success: false, error: "Something went wrong" }
+    }
+}
+
+export { createMessage, deleteMessage, updateMessage, createReply }

@@ -12,5 +12,8 @@ export type ReactionType = Tables<"message_reactions">
 
 export type MessageWithUserAndReactionsType = MessageType & {
     user: UserType,
-    reactions: ReactionType[]
+    reactions: ReactionType[],
+    replies: {
+        count: number
+    }[]
 }
