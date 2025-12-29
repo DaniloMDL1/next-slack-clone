@@ -18,7 +18,7 @@ const MessageInput = () => {
             const response = await createMessage({ content, channelId })
     
             if(response.success) {
-    
+                
             } else {
                 toast.error(response.error)
             }

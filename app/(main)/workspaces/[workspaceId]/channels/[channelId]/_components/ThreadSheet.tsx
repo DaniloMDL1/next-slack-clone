@@ -96,7 +96,7 @@ const ThreadSheet = ({ currentUserId }: Props) => {
                         return prev
                     }
 
-                    return prev
+                    return [...prev, { ...newMessage, reactions: [] }]
                 })
             }
         )

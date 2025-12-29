@@ -30,9 +30,6 @@ const createChannel = async (prevState: CreateChannelStateType, formData: FormDa
     const formDataName = formData.get("name") as string
     const formDataWorkspaceId = formData.get("workspaceId") as string
 
-    console.log(formDataName)
-    console.log(formDataWorkspaceId)
-
     const validatedFields = formSchema.safeParse({
         name: formDataName,
         workspaceId: formDataWorkspaceId

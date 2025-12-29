@@ -172,3 +172,69 @@ html, body {
     height: 0;
     pointer-events: none;
 }
+
+.tiptap img {
+    display: block;
+}
+
+.tiptap [data-resize-handle] {
+    position: absolute;
+    background-color: var(--primary);
+    border: 1px solid var(--primary-foreground);
+    border-radius: 2px;
+    z-index: 10;
+    transition: transform 0.1s ease, background-color 0.2s;
+}
+
+.tiptap [data-resize-handle]:hover {
+    background-color: var(--primary-foreground);
+    border-color: var(--primary);
+    transform: scale(1.2);
+}
+
+.tiptap [data-resize-handle$='-left'],
+.tiptap [data-resize-handle$='-right'] {
+    width: 10px;
+    height: 10px;
+}
+
+.tiptap [data-resize-handle='top-left'] { 
+  top: -5px; left: -5px; cursor: nwse-resize; 
+}
+.tiptap [data-resize-handle='top-right'] { 
+  top: -5px; right: -5px; cursor: nesw-resize; 
+}
+.tiptap [data-resize-handle='bottom-left'] { 
+  bottom: -5px; left: -5px; cursor: nesw-resize; 
+}
+.tiptap [data-resize-handle='bottom-right'] { 
+  bottom: -5px; right: -5px; cursor: nwse-resize; 
+}
+
+/* --- Edge Handles (Thin Bars) --- */
+/* Horizontal edges (Top/Bottom) */
+.tiptap [data-resize-handle='top'],
+.tiptap [data-resize-handle='bottom'] {
+  height: 6px;
+  left: 12px;
+  right: 12px;
+  cursor: ns-resize;
+}
+.tiptap [data-resize-handle='top'] { top: -3px; }
+.tiptap [data-resize-handle='bottom'] { bottom: -3px; }
+
+/* Vertical edges (Left/Right) */
+.tiptap [data-resize-handle='left'],
+.tiptap [data-resize-handle='right'] {
+  width: 6px;
+  top: 12px;
+  bottom: 12px;
+  cursor: ew-resize;
+}
+.tiptap [data-resize-handle='left'] { left: -3px; }
+.tiptap [data-resize-handle='right'] { right: -3px; }
+
+/* Hide handles when the image is not in "resize state" */
+.tiptap [data-resize-state='false'] [data-resize-handle] {
+  display: none;
+}

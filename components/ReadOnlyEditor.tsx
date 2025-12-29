@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils"
 import { useEditor, EditorContent, JSONContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
+import Image from "@tiptap/extension-image"
 import { useEffect } from "react"
 
 type Props = {
@@ -12,7 +13,14 @@ type Props = {
 const ReadOnlyEditor = ({ content }: Props) => {
 
     const editor = useEditor({
-        extensions: [StarterKit],
+        extensions: [
+            StarterKit,
+            Image.configure({
+                HTMLAttributes: {
+                    class: "rounded-lg"
+                }
+            })
+        ],
         editable: false,
         immediatelyRender: false,
         content,    

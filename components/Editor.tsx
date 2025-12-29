@@ -6,6 +6,7 @@ import StarterKit from "@tiptap/starter-kit"
 import { Placeholder } from "@tiptap/extensions"
 import Emoji from "@tiptap/extension-emoji"
 import CodeBlock from "@tiptap/extension-code-block"
+import Image from "@tiptap/extension-image"
 import { Toggle } from "./ui/toggle"
 import { Bold, Code2, ImageIcon, Italic, List, ListOrdered, Redo, Smile, Strikethrough, Undo } from "lucide-react"
 import { Button } from "./ui/button"
@@ -51,6 +52,12 @@ const Editor = ({ content, onChange, placeholder, onSubmit, isSubmitting, isEdit
                 tabSize: 4,
                 enableTabIndentation: true
             }),
+            Image.configure({
+                resize: {
+                    enabled: true,
+                    alwaysPreserveAspectRatio: true
+                }
+            })
         ],
         editable: true,
         immediatelyRender: false,
@@ -76,14 +83,13 @@ const Editor = ({ content, onChange, placeholder, onSubmit, isSubmitting, isEdit
         try {
             setIsUploading(true)
 
-            const filePath = `${channelId}/${file.name}`
+            const filePath = `${channelId}/${crypto.randomUUID()}-${file.name}`
 
             const { error: uploadError } = await supabase.storage
             .from("message-attachments")
             .upload(filePath, file, { contentType: file.type, upsert: false })
 
             if(uploadError) {
-                console.log(uploadError)
                 toast.error(uploadError.message)
                 return
             }
@@ -92,8 +98,9 @@ const Editor = ({ content, onChange, placeholder, onSubmit, isSubmitting, isEdit
             .from("message-attachments")
             .getPublicUrl(filePath)
 
+            editor.chain().focus().setImage({ src: data.publicUrl, alt: file.name }).run()
+
         } catch(error) {
-            console.log(error)
             toast.error("Error uploading image")
         } finally {
             setIsUploading(false)

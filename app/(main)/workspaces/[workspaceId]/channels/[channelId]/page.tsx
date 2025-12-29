@@ -43,7 +43,7 @@ const ChannelPage = async ({ params }: Props) => {
 
     return (
         <div className="h-full flex flex-col">
-            <Header channel={channel}/>
+            <Header channel={channel} isOwner={user.id === channel.user_id}/>
             <MessagesContainer initialMessages={messages ?? []} channelId={channelId} currentUserId={user.id}/>
             <MessageInput />
             <ThreadSheet currentUserId={user.id}/>
